@@ -6,10 +6,12 @@ from telethon.sessions import StringSession
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
 STRING_SESSION = os.getenv('STRING_SESSION', '')
-MY_CHANNEL = 'favproxy'
+
+# آیدی کانال مهرداد (تایید شده)
+MY_CHANNEL = -1003576265638 
 BRAND = "🛡️ MEHRDAD HUNTER 🛰️"
 
-# دیتابیس لوکیشن
+# دیتابیس لوکیشن برای زیبایی پست‌ها
 COUNTRY_MAP = {
     'tr': '🇹🇷 TURKEY', 'us': '🇺🇸 USA', 'de': '🇩🇪 GERMANY',
     'ir': '🇮🇷 IRAN', 'nl': '🇳🇱 NETHERLANDS', 'gb': '🇬🇧 UK',
@@ -24,12 +26,17 @@ def get_location(url):
     return "🌐 GLOBAL"
 
 async def main():
-    # اتصال با سشن تایید شده مهرداد
+    # اتصال با سشن تایید شده
     client = TelegramClient(StringSession(STRING_SESSION.strip()), API_ID, API_HASH)
     try:
-        print("📡 در حال اتصال به تلگرام...")
+        print("📡 در حال اتصال به سرور تلگرام...")
         await client.connect()
-        print("🚀 شکارچی وارد شد! شروع عملیات...")
+        
+        if not await client.is_user_authorized():
+            print("❌ خطا: سشن معتبر نیست!")
+            return
+
+        print("🚀 شکارچی متصل شد. در حال جمع‌آوری از سورس‌ها...")
 
         sources = [
             "https://raw.githubusercontent.com/MahdiKharyab/v2ray-collector/main/sub/sub_merge.txt",
@@ -49,6 +56,7 @@ async def main():
         random.shuffle(unique_proxies)
         
         selection = unique_proxies[:15]
+        print(f"✅ تعداد {len(selection)} پروکسی آماده ارسال به کانال است.")
 
         for i, p in enumerate(selection, 1):
             loc = get_location(p)
@@ -60,19 +68,24 @@ async def main():
                 f"━━━━━━━━━━━━━━━━━━\n"
                 f"🔗 **Config:**\n`{p}`\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"🆔 @{MY_CHANNEL}"
+                f"🆔 @favproxy"
             )
-            await client.send_message(MY_CHANNEL, msg)
-            print(f"✅ ارسال موفق {i}/15")
             
-            # فاصله ۲۰ ثانیه‌ای برای پر کردن بازه ۵ دقیقه
+            try:
+                # ارسال مستقیم با آیدی عددی
+                await client.send_message(MY_CHANNEL, msg)
+                print(f"📤 ارسال موفق {i}/15")
+            except Exception as e:
+                print(f"❌ خطا در ارسال پیام {i}: {e}")
+            
+            # ایجاد فاصله ۲۰ ثانیه‌ای برای نگه داشتن اکشن به مدت ۵ دقیقه
             if i < 15:
                 await asyncio.sleep(20)
             
-        print("🏁 سیکل ۱۵ دقیقه‌ای با موفقیت انجام شد.")
+        print("🏁 عملیات با موفقیت به پایان رسید.")
 
     except Exception as e:
-        print(f"❌ خطا: {e}")
+        print(f"❌ خطای غیرمنتظره: {e}")
     finally:
         await client.disconnect()
 
