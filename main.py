@@ -4,7 +4,7 @@ from telethon import TelegramClient, functions, types
 # تنظیمات از Secrets
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
-MY_CHANNEL = os.getenv('MY_CHANNEL', 'favme')
+MY_CHANNEL = os.getenv('MY_CHANNEL', 'favproxy')
 
 extracted_links = []
 
