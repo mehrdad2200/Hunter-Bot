@@ -36,6 +36,8 @@ jobs:
           git config --local user.email "bot@github.com"
           git config --local user.name "Mehrdad-Hunter-Bot"
           git add index.html
-          git commit -m "Update Proxies" || echo "No changes"
-          git pull origin main --rebase --autostash # این خط جادویی تمام مشکلات تداخل را حل می‌کند
+          # ابتدا کامیت می‌کنیم تا تغییرات ثبت شوند
+          git commit -m "Update Proxies and Site" || echo "No changes to commit"
+          # حالا با استراتژی Rebase و حفظ تغییرات محلی، کدها را یکی می‌کنیم
+          git pull --rebase -X theirs origin main
           git push origin main
