@@ -7,22 +7,38 @@ API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
 STRING_SESSION = os.getenv('STRING_SESSION', '')
 MY_CHANNEL = 'favproxy'
-BRAND = "🛡️ MEHRDAD HUNTER 🛡️"
+BRAND = "🛰️ MEHRDAD HUNTER 🛰️"
 
-SOURCES = [
-    "https://raw.githubusercontent.com/MahdiKharyab/v2ray-collector/main/sub/sub_merge.txt",
-    "https://raw.githubusercontent.com/yebekhe/TVC/main/subscriptions/protocols/vless",
-    "https://raw.githubusercontent.com/Iranian_Proxies_Collector/Main/main/sub/all.txt"
-]
+# دیتابیس شناسایی کشورها و پرچم‌ها
+COUNTRY_MAP = {
+    'tr': ('Turkey', '🇹🇷'), 'us': ('USA', '🇺🇸'), 'de': ('Germany', '🇩🇪'),
+    'ir': ('Iran', '🇮🇷'), 'nl': ('Netherlands', '🇳🇱'), 'gb': ('UK', '🇬🇧'),
+    'fr': ('France', '🇫🇷'), 'fi': ('Finland', '🇫🇮'), 'sg': ('Singapore', '🇸🇬'),
+    'jp': ('Japan', '🇯🇵'), 'ca': ('Canada', '🇨🇦'), 'ae': ('UAE', '🇦🇪'),
+    'ru': ('Russia', '🇷🇺'), 'in': ('India', '🇮🇳'), 'kr': ('Korea', '🇰🇷')
+}
+
+def get_location_info(url):
+    """تشخیص کشور و ایموجی از روی متن پروکسی"""
+    name_part = url.split('#')[-1].lower() if '#' in url else ''
+    for code, (name, emoji) in COUNTRY_MAP.items():
+        if code in name_part or name.lower() in name_part:
+            return f"{emoji} {name.upper()}"
+    return "🌐 GLOBAL"
 
 def create_html(proxies):
-    # قالب HTML فوق پیشرفته و خفن
     proxies_html = ""
-    for p in proxies[:30]:
+    for p in proxies[:40]:
+        loc = get_location_info(p)
+        name = p.split('#')[-1] if '#' in p else "High-Speed"
         proxies_html += f'''
         <div class="card">
-            <div class="config-text">{p[:70]}...</div>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText('{p}')">کپی کن ⚡</button>
+            <div class="info">
+                <span class="loc-tag">{loc}</span>
+                <div class="name">{name[:25]}</div>
+            </div>
+            <div class="config-val">{p[:40]}...</div>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('{p}');alert('کپی شد ✅')">کپی</button>
         </div>'''
 
     html_template = f'''
@@ -33,25 +49,22 @@ def create_html(proxies):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{BRAND}</title>
         <style>
-            body {{ background: #0f0f0f; color: #e0e0e0; font-family: 'Segoe UI', Tahoma; text-align: center; margin: 0; padding: 20px; }}
-            h1 {{ color: #00ff88; text-shadow: 0 0 15px #00ff88; font-size: 3rem; margin-bottom: 10px; }}
-            .container {{ max-width: 900px; margin: auto; }}
-            .card {{ background: #1e1e1e; border: 1px solid #333; padding: 20px; margin: 15px 0; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }}
-            .card:hover {{ transform: scale(1.02); border-color: #00ff88; box-shadow: 0 0 20px rgba(0,255,136,0.2); }}
-            .config-text {{ font-family: monospace; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }}
-            .copy-btn {{ background: #00ff88; color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }}
-            .copy-btn:hover {{ background: #fff; transform: translateY(-2px); }}
-            .status {{ color: #888; margin-bottom: 40px; }}
-            footer {{ margin-top: 50px; color: #555; font-size: 0.9rem; }}
+            :root {{ --neon: #00ff88; --bg: #0d0d0d; --card: #1a1a1a; }}
+            body {{ background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma; padding: 20px; display: flex; flex-direction: column; align-items: center; }}
+            h1 {{ color: var(--neon); text-shadow: 0 0 15px var(--neon); }}
+            .card {{ background: var(--card); border: 1px solid #333; width: 100%; max-width: 550px; padding: 15px; margin: 10px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }}
+            .card:hover {{ border-color: var(--neon); transform: translateY(-3px); }}
+            .loc-tag {{ background: #333; color: var(--neon); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; margin-left: 10px; border: 1px solid var(--neon); }}
+            .name {{ font-weight: bold; font-size: 0.9rem; }}
+            .copy-btn {{ background: var(--neon); color: #000; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }}
+            .footer {{ margin-top: 30px; color: #555; font-size: 0.8rem; }}
         </style>
     </head>
     <body>
-        <div class="container">
-            <h1>{BRAND}</h1>
-            <p class="status">آخرین شکار: {time.strftime('%H:%M:%S')} | وضعیت: <span style="color:#00ff88">عملیاتی ✅</span></p>
-            {proxies_html}
-            <footer>طراحی شده توسط سیستم هوشمند مهرداد هنتر</footer>
-        </div>
+        <h1>{BRAND}</h1>
+        <p>بروزرسانی: {time.strftime('%H:%M:%S')}</p>
+        {proxies_html}
+        <div class="footer">Next update in 15 minutes...</div>
     </body>
     </html>'''
     with open("index.html", "w", encoding="utf-8") as f:
@@ -61,10 +74,16 @@ async def main():
     client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     try:
         await client.connect()
-        print("🚀 اتصال برقرار شد...")
+        print("🚀 شکارچی بیدار شد...")
+
+        sources = [
+            "https://raw.githubusercontent.com/MahdiKharyab/v2ray-collector/main/sub/sub_merge.txt",
+            "https://raw.githubusercontent.com/yebekhe/TVC/main/subscriptions/protocols/vless",
+            "https://raw.githubusercontent.com/Iranian_Proxies_Collector/Main/main/sub/all.txt"
+        ]
 
         all_links = []
-        for url in SOURCES:
+        for url in sources:
             try:
                 res = requests.get(url, timeout=10).text
                 links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', res)
@@ -74,25 +93,25 @@ async def main():
         unique_proxies = list(set(all_links))
         random.shuffle(unique_proxies)
         
-        # ساخت سایت با ۳۰ پروکسی
+        # ساخت سایت
         create_html(unique_proxies)
-        print("✅ سایت با کیفیت خفن آپدیت شد.")
+        print("✅ سایت آپدیت شد.")
 
-        # ارسال فقط ۵ پروکسی برتر به تلگرام (برای جلوگیری از توقف و کرش کردن)
-        for p in unique_proxies[:5]:
+        # ارسال به تلگرام (۳ مورد برتر برای هر ۱۵ دقیقه)
+        for p in unique_proxies[:3]:
+            loc_info = get_location_info(p)
             msg = (
-                f"🛡️ **NEW ELITE CONFIG**\n"
+                f"{BRAND}\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"🚀 **Speed:** `Extreme`\n"
-                f"🌍 **Region:** `Global` 🌐\n"
+                f"📍 **Server:** {loc_info}\n"
+                f"⚡ **Status:** `Excellent`\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
                 f"🔗 **Config:**\n`{p}`\n"
                 f"━━━━━━━━━━━━━━━━━━\n"
-                f"🆔 @{MY_CHANNEL}\n"
-                f"💎 **MEHRDAD HUNTER**"
+                f"🆔 @{MY_CHANNEL}"
             )
             await client.send_message(MY_CHANNEL, msg)
-            await asyncio.sleep(15) # زمان انتظار بیشتر برای امنیت اکانت
+            await asyncio.sleep(10)
             
     except Exception as e:
         print(f"❌ Error: {e}")
