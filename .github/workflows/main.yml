@@ -1,42 +1,41 @@
-name: Proxy Hunter
+name: Mehrdad Hunter Elite Cycle
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # اجرای خودکار هر 15 دقیقه
-  workflow_dispatch: # امکان اجرای دستی توسط مهرداد
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    # اجازه دادن به گیت‌هاب برای تغییر در فایل‌ها (مثل index.html)
     permissions:
       contents: write
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # برای دریافت کامل تاریخچه جهت ریبیس کردن
 
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
       - name: Install Libraries
-        run: |
-          pip install telethon requests
+        run: pip install telethon requests
 
-      - name: Run Hunter Bot (5 Minute Session)
+      - name: Run Hunter Bot
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           STRING_SESSION: ${{ secrets.STRING_SESSION }}
         run: python main.py
 
-      - name: Update GitHub Pages (Site)
+      - name: Commit and Push
         run: |
           git config --local user.email "bot@github.com"
           git config --local user.name "Mehrdad-Hunter-Bot"
+          git pull origin main --rebase
           git add index.html
-          git commit -m "Update Proxy List and Site" || echo "No changes to commit"
-          git push
+          git commit -m "Update Proxies" || echo "No changes"
+          git push origin main
