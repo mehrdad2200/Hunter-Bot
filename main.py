@@ -1,12 +1,11 @@
 import os, re, asyncio, socket, time, json, base64, requests
 from telethon import TelegramClient, functions, types
 
-# تنظیمات از Secrets
+# تنظیمات اصلی
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
-MY_CHANNEL = os.getenv('MY_CHANNEL', 'favproxy')
-
-extracted_links = []
+# اولویت با Secret است، اگر نبود به favproxy می‌فرستد
+MY_CHANNEL = os.getenv('MY_CHANNEL', 'favproxy') 
 
 def get_server_address(link):
     try:
@@ -14,6 +13,7 @@ def get_server_address(link):
             v2_json = json.loads(base64.b64decode(link[8:]).decode('utf-8'))
             return v2_json.get('add'), int(v2_json.get('port', 443))
         elif '://' in link:
+            # استخراج هاست و پورت برای VLESS, Trojan, SS
             match = re.search(r'@([^:/?#]+):(\d+)', link)
             if match: return match.group(1), int(match.group(2))
             match_no_port = re.search(r'@([^:/?#]+)', link)
@@ -23,7 +23,7 @@ def get_server_address(link):
 
 def check_ping(host, port):
     try:
-        socket.setdefaulttimeout(2)
+        socket.setdefaulttimeout(1.5) # پینگ سریع برای شکارچی
         start = time.time()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((host, port))
@@ -38,56 +38,69 @@ def get_geo_info(host):
             flag = "".join(chr(ord(c) + 127397) for c in code)
             return res.get('country'), flag
     except: pass
-    return "Unknown", "🌐"
+    return "Global", "🌐"
 
 async def hunter_logic():
     client = TelegramClient('fav_session', API_ID, API_HASH)
     await client.connect()
-    if not await client.is_user_authorized(): return
+    if not await client.is_user_authorized():
+        print("❌ فایل سشن شناسایی نشد!")
+        return
 
-    print("🕵️‍♂️ Hunter Bot در حال جستجوی حرفه‌ای...")
+    print(f"🕵️‍♂️ شروع عملیات در کانال @{MY_CHANNEL}...")
     keywords = ['vless://', 'vmess://', 'trojan://', 'ss://']
     
-    html_content = "<html><body style='font-family:tahoma; background:#1a1a1a; color:white; padding:20px;'>"
-    html_content += f"<h1 style='color:#00d4ff;'>🛰 Hunter Bot Live Logs - @{MY_CHANNEL}</h1><hr>"
+    # شروع فایل گزارش HTML
+    report_html = f"<html><body style='background:#0f172a; color:#f8fafc; font-family:sans-serif; padding:40px;'>"
+    report_html += f"<h1 style='color:#38bdf8;'>🛰 Hunter Bot Dashboard - @{MY_CHANNEL}</h1><hr style='border:0.5px solid #334155;'>"
 
     for kw in keywords:
-        result = await client(functions.messages.SearchGlobalRequest(
-            q=kw, filter=types.InputMessagesFilterEmpty(),
-            min_date=None, max_date=None, offset_id=0,
-            offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=20
-        ))
-        
-        for msg in result.messages:
-            if hasattr(msg, 'message') and msg.message:
-                links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', msg.message)
-                for link in list(set(links)):
-                    host, port = get_server_address(link)
-                    if host:
-                        ping = check_ping(host, port)
-                        if ping and ping < 1500: # فقط پینگ‌های زیر ۱.۵ ثانیه
-                            country, flag = get_geo_info(host)
-                            
-                            # قالب‌بندی زیبا برای تلگرام
-                            beauty_msg = (
-                                f"🚀 **PREMIUM CONFIG DETECTED**\n"
-                                f"━━━━━━━━━━━━━━━━━━━━\n"
-                                f"📍 **Country:** {flag} {country}\n"
-                                f"⚡ **Ping:** `{ping}ms` | **Status:** ✅\n"
-                                f"🛠 **Type:** `{kw.split('://')[0].upper()}`\n"
-                                f"━━━━━━━━━━━━━━━━━━━━\n"
-                                f"🔗 **Config:**\n\n`{link}`\n\n"
-                                f"━━━━━━━━━━━━━━━━━━━━\n"
-                                f"🆔 @{MY_CHANNEL} | 📡 [t.me/favme](https://t.me/favme)"
-                            )
-                            
-                            await client.send_message(MY_CHANNEL, beauty_msg, link_preview=False)
-                            html_content += f"<div style='border:1px solid #333; margin:10px; padding:10px;'><b>{flag} {country}</b> - {ping}ms<br><code style='font-size:10px;'>{link}</code></div>"
-                            await asyncio.sleep(2)
+        try:
+            result = await client(functions.messages.SearchGlobalRequest(
+                q=kw, filter=types.InputMessagesFilterEmpty(),
+                min_date=None, max_date=None, offset_id=0,
+                offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=25
+            ))
+            
+            for msg in result.messages:
+                if hasattr(msg, 'message') and msg.message:
+                    links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', msg.message)
+                    for link in list(set(links)):
+                        host, port = get_server_address(link)
+                        if host:
+                            ping = check_ping(host, port)
+                            if ping: # فقط اگه سالم بود بفرست
+                                country, flag = get_geo_info(host)
+                                p_type = kw.split('://')[0].upper()
+                                
+                                # طراحی پست تلگرام
+                                beauty_msg = (
+                                    f"💎 **{p_type} HIGH SPEED CONFIG**\n"
+                                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                                    f"🌍 **Location:** {flag} {country}\n"
+                                    f"⚡ **Ping:** `{ping}ms` | **Status:** `Stable` ✅\n"
+                                    f"🛡 **Verified by Hunter Bot**\n"
+                                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                                    f"🔗 **Config:**\n\n`{link}`\n\n"
+                                    f"━━━━━━━━━━━━━━━━━━━━\n"
+                                    f"🆔 @{MY_CHANNEL}\n"
+                                    f"📡 [t.me/favme](https://t.me/favme)"
+                                )
+                                
+                                try:
+                                    await client.send_message(MY_CHANNEL, beauty_msg, link_preview=False)
+                                    report_html += f"<div style='background:#1e293b; padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid #38bdf8;'><b>{flag} {country}</b> | {ping}ms<br><small style='color:#94a3b8;'>{link[:100]}...</small></div>"
+                                    await asyncio.sleep(3) # برای جلوگیری از بلاک شدن توسط تلگرام
+                                except: pass
+        except Exception as e:
+            print(f"Error searching {kw}: {e}")
 
-    html_content += "</body></html>"
-    with open("report.html", "w", encoding="utf-8") as f: f.write(html_content)
+    report_html += "</body></html>"
+    with open("report.html", "w", encoding="utf-8") as f:
+        f.write(report_html)
+    
     await client.disconnect()
+    print("✅ شکار این مرحله تمام شد.")
 
 if __name__ == "__main__":
     asyncio.run(hunter_logic())
