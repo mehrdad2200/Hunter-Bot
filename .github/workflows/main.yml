@@ -1,43 +1,20 @@
-name: Mehrdad Hunter Bot
-
+name: Run Hunter Bot
 on:
   schedule:
-    - cron: '0 * * * *' # هر یک ساعت اجرا شود
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
+    - cron: '0 * * * *' # هر یک ساعت
+  workflow_dispatch: # اجرای دستی
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install telethon requests
-
-    - name: Run Hunter Bot
-      env:
-        API_ID: ${{ secrets.API_ID }}
-        API_HASH: ${{ secrets.API_HASH }}
-        MY_CHANNEL: "favproxy"
-      run: python main.py
-
-    - name: Commit and Push Changes
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        # این خط تمام فایل‌های ساخته شده (HTML) و آپدیت شده (Session) را ذخیره می‌کند
-        git add index.html fav_session.session
-        git commit -m "Auto Update: New Proxies + Session [$(date)]" || echo "No changes to commit"
-        git push origin main
+      - uses: actions/checkout@v3
+      - setup python: uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - install deps: run: pip install telethon requests
+      - run bot:
+          env:
+            API_ID: ${{ secrets.API_ID }}
+            API_HASH: ${{ secrets.API_HASH }}
+            STRING_SESSION: ${{ secrets.STRING_SESSION }}
+          run: python main.py
