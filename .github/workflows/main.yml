@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # برای دریافت کامل تاریخچه جهت ریبیس کردن
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config --local user.email "bot@github.com"
           git config --local user.name "Mehrdad-Hunter-Bot"
-          git pull origin main --rebase
           git add index.html
           git commit -m "Update Proxies" || echo "No changes"
+          git pull origin main --rebase --autostash # این خط جادویی تمام مشکلات تداخل را حل می‌کند
           git push origin main
