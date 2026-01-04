@@ -8,13 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,14 +26,3 @@ jobs:
           API_HASH: ${{ secrets.API_HASH }}
           STRING_SESSION: ${{ secrets.STRING_SESSION }}
         run: python main.py
-
-      - name: Commit and Push
-        run: |
-          git config --local user.email "bot@github.com"
-          git config --local user.name "Mehrdad-Hunter-Bot"
-          git add index.html
-          # ابتدا کامیت می‌کنیم تا تغییرات ثبت شوند
-          git commit -m "Update Proxies and Site" || echo "No changes to commit"
-          # حالا با استراتژی Rebase و حفظ تغییرات محلی، کدها را یکی می‌کنیم
-          git pull --rebase -X theirs origin main
-          git push origin main
