@@ -2,9 +2,8 @@ name: Mehrdad Hunter Bot
 
 on:
   schedule:
-    # اجرای خودکار هر یک ساعت یک‌بار
-    - cron: '0 * * * *'
-  workflow_dispatch: # امکان اجرای دستی از تب Actions
+    - cron: '0 * * * *' # هر یک ساعت اجرا شود
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,13 +30,14 @@ jobs:
       env:
         API_ID: ${{ secrets.API_ID }}
         API_HASH: ${{ secrets.API_HASH }}
-        MY_CHANNEL: "favme" # نام کانال تلگرامت بدون @
+        MY_CHANNEL: "favme"
       run: python main.py
 
     - name: Commit and Push Changes
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add index.html fav_session.session # ذخیره صفحه وب و سشن تلگرام
-        git commit -m "Update Proxies and Session [$(date)]" || echo "No changes to commit"
-        git push
+        # این خط تمام فایل‌های ساخته شده (HTML) و آپدیت شده (Session) را ذخیره می‌کند
+        git add index.html fav_session.session
+        git commit -m "Auto Update: New Proxies + Session [$(date)]" || echo "No changes to commit"
+        git push origin main
