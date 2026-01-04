@@ -1,82 +1,43 @@
-import os, re, asyncio, requests, random, time
+import os, re, asyncio, requests, random
 from telethon import TelegramClient
 from telethon.sessions import StringSession
+from telethon.errors import SessionPasswordNeededError, PhoneNumberInvalidError
 
 # --- تنظیمات مهرداد هنتر ---
-API_ID = int(os.getenv('API_ID', 0))
-API_HASH = os.getenv('API_HASH', '')
-STRING_SESSION = os.getenv('STRING_SESSION', '')
+API_ID = os.getenv('API_ID')
+API_HASH = os.getenv('API_HASH')
+STRING_SESSION = os.getenv('STRING_SESSION')
 MY_CHANNEL = 'favproxy'
-BRAND = "🛡️ MEHRDAD HUNTER 🛰️"
-
-# نقشه پرچم کشورها
-COUNTRY_MAP = {
-    'tr': '🇹🇷 TURKEY', 'us': '🇺🇸 USA', 'de': '🇩🇪 GERMANY',
-    'ir': '🇮🇷 IRAN', 'nl': '🇳🇱 NETHERLANDS', 'gb': '🇬🇧 UK',
-    'fr': '🇫🇷 FRANCE', 'fi': '🇫🇮 FINLAND', 'sg': '🇸🇬 SINGAPORE',
-    'jp': '🇯🇵 JAPAN', 'ca': '🇨🇦 CANADA', 'ae': '🇦🇪 UAE'
-}
-
-def get_location(url):
-    name_part = url.split('#')[-1].lower() if '#' in url else ''
-    for code, info in COUNTRY_MAP.items():
-        if code in name_part: return info
-    return "🌐 GLOBAL"
 
 async def main():
-    # استفاده از سشنی که مهرداد فرستاده
-    client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
+    # چک کردن خالی نبودن مقادیر
+    if not API_ID or not STRING_SESSION:
+        print("❌ خطا: متغیرهای API_ID یا STRING_SESSION در Secrets تعریف نشده‌اند!")
+        return
+
+    client = TelegramClient(StringSession(STRING_SESSION.strip()), int(API_ID), API_HASH)
+    
     try:
+        print("📡 در حال تلاش برای اتصال به تلگرام...")
         await client.connect()
-        if not await client.is_user_authorized():
-            print("❌ سشن نامعتبر است! دوباره سشن بگیرید.")
-            return
-            
-        print("🚀 شکارچی با موفقیت به تلگرام وصل شد. شروع جمع‌آوری...")
-
-        sources = [
-            "https://raw.githubusercontent.com/MahdiKharyab/v2ray-collector/main/sub/sub_merge.txt",
-            "https://raw.githubusercontent.com/yebekhe/TVC/main/subscriptions/protocols/vless",
-            "https://raw.githubusercontent.com/barry-far/V2RAY-CONFIGS/main/All_Configs_Sub.txt"
-        ]
-
-        all_links = []
-        for url in sources:
-            try:
-                res = requests.get(url, timeout=10).text
-                links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', res)
-                all_links.extend(links)
-            except: continue
-
-        unique_proxies = list(set(all_links))
-        random.shuffle(unique_proxies)
         
-        selection = unique_proxies[:15]
-        print(f"🎯 تعداد {len(selection)} پروکسی برای ارسال آماده شد.")
+        if not await client.is_user_authorized():
+            print("❌ خطا: سشن معتبر نیست یا منقضی شده است!")
+            return
 
-        for i, p in enumerate(selection, 1):
-            loc = get_location(p)
-            msg = (
-                f"{BRAND}\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"📍 **Server {i}/15:** {loc}\n"
-                f"⚡ **Status:** `Excellent` ✅\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"🔗 **Config:**\n`{p}`\n"
-                f"━━━━━━━━━━━━━━━━━━\n"
-                f"🆔 @{MY_CHANNEL}"
-            )
-            await client.send_message(MY_CHANNEL, msg)
-            print(f"✅ ارسال موفق {i}/15")
-            
-            # فاصله ۲۰ ثانیه‌ای برای نگه داشتن ربات به مدت ۵ دقیقه
-            if i < 15:
-                await asyncio.sleep(20)
-            
-        print("🏁 بازه ۵ دقیقه‌ای تمام شد. ربات خاموش می‌شود.")
+        print("🚀 اتصال موفق! در حال جمع‌آوری و ارسال...")
+        
+        # کد جمع‌آوری پروکسی
+        res = requests.get("https://raw.githubusercontent.com/yebekhe/TVC/main/subscriptions/protocols/vless", timeout=10).text
+        proxies = re.findall(r'vless://[^\s<>"]+', res)
+        
+        for i, p in enumerate(proxies[:15], 1):
+            await client.send_message(MY_CHANNEL, f"🛡️ MEHRDAD HUNTER\n\n`{p}`\n\n@{MY_CHANNEL}")
+            print(f"✅ ارسال شد {i}/15")
+            await asyncio.sleep(20)
 
     except Exception as e:
-        print(f"❌ خطای غیرمنتظره: {e}")
+        print(f"❌ خطای سیستمی: {e}")
     finally:
         await client.disconnect()
 
