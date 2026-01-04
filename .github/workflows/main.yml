@@ -1,24 +1,34 @@
-name: Hunter Bot Action
+name: Hunter Bot Pro
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # هر نیم ساعت خودکار شکار میکنه
-  workflow_dispatch: # دکمه اجرای دستی
+    - cron: '0 */12 * * *' # اجرای دقیق هر ۱۲ ساعت یکبار
+  workflow_dispatch:
 
 jobs:
-  hunt:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Install
-        run: pip install -r requirements.txt
+
+      - name: Install Apps
+        run: pip install telethon requests
+
       - name: Run Hunter
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           MY_CHANNEL: ${{ secrets.MY_CHANNEL }}
         run: python main.py
+
+      - name: Upload Report HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-Report
+          path: report.html
