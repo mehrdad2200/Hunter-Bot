@@ -1,4 +1,4 @@
-name: Mehrdad Hunter Elite Cycle
+name: Mehrdad Hunter Global Radar
 
 on:
   schedule:
@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -17,10 +17,10 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Libraries
+      - name: Install Dependencies
         run: pip install telethon requests
 
-      - name: Run Hunter Bot
+      - name: Start Global Search
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
