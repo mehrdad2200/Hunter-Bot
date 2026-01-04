@@ -1,38 +1,74 @@
-import os, asyncio
-from telethon import TelegramClient
+import os, re, asyncio, requests, random, time, socket, json, base64
+from telethon import TelegramClient, functions, types
 from telethon.sessions import StringSession
 
-async def debug_hunter():
-    print("🔍 در حال بررسی تنظیمات امنیتی مهرداد...")
-    
-    # تست وجود متغیرها
-    api_id = os.getenv('API_ID')
-    api_hash = os.getenv('API_HASH')
-    session = os.getenv('STRING_SESSION')
+# دریافت اطلاعات از Secrets گیت‌هاب
+API_ID = int(os.getenv('API_ID', 0))
+API_HASH = os.getenv('API_HASH', '')
+STRING_SESSION = os.getenv('STRING_SESSION', '')
+MY_CHANNEL = 'favproxy'
+BRAND = "🛡️ MEHRDAD HUNTER 🛰️"
 
-    if not api_id: print("❌ API_ID یافت نشد!")
-    if not api_hash: print("❌ API_HASH یافت نشد!")
-    if not session: print("❌ STRING_SESSION یافت نشد!")
-    
-    if not all([api_id, api_hash, session]):
-        print("⚠️ مهرداد جان، برو به بخش Secrets و مطمئن شو اسم‌ها دقیقاً همینا هستن.")
+SEARCH_KEYWORDS = ['vless://', 'vmess://', 'trojan://', 'ss://']
+
+def get_server_address(link):
+    try:
+        if link.startswith('vmess://'):
+            v2_json = json.loads(base64.b64decode(link[8:]).decode('utf-8'))
+            return v2_json.get('add'), int(v2_json.get('port', 443))
+        elif '://' in link:
+            match = re.search(r'@([^:/?#]+):(\d+)', link)
+            if match: return match.group(1), int(match.group(2))
+            match_no_port = re.search(r'@([^:/?#]+)', link)
+            return match_no_port.group(1), 443
+    except: pass
+    return None, None
+
+def check_ping(host, port):
+    try:
+        socket.setdefaulttimeout(2)
+        start = time.time()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((host, port))
+        return int((time.time() - start) * 1000)
+    except: return False
+
+async def main():
+    if not STRING_SESSION:
+        print("❌ STRING_SESSION یافت نشد!")
         return
 
-    print("📡 تلاش برای اتصال به تلگرام...")
-    client = TelegramClient(StringSession(session), int(api_id), api_hash)
-    
+    client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     try:
         await client.connect()
-        if not await client.is_user_authorized():
-            print("❌ سشن نامعتبر است! تلگرام اجازه ورود نمی‌دهد.")
-        else:
-            me = await client.get_me()
-            print(f"✅ تبریک مهرداد! متصل شدی به نام: {me.first_name}")
-            print("🚀 حالا می‌تونی کد اصلی رو با خیال راحت جایگزین کنی.")
-    except Exception as e:
-        print(f"❌ خطای غیرمنتظره: {e}")
+        print("✅ اتصال موفقیت‌آمیز بود. در حال شکار پروکسی...")
+
+        all_links = []
+        for kw in SEARCH_KEYWORDS:
+            result = await client(functions.messages.SearchGlobalRequest(
+                q=kw, filter=types.InputMessagesFilterEmpty(),
+                min_date=None, max_date=None, offset_id=0,
+                offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=50
+            ))
+            for message in result.messages:
+                if hasattr(message, 'message') and message.message:
+                    links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', message.message)
+                    all_links.extend(links)
+
+        unique_links = list(set(all_links))
+        random.shuffle(unique_links)
+        
+        count = 0
+        for link in unique_links:
+            if count >= 15: break
+            host, port = get_server_address(link)
+            if host and check_ping(host, port):
+                msg = f"🚀 **NEW CONFIG FOUND**\n━━━━━━━━━━━━\n🔗 **Config:**\n`{link.strip()}`\n━━━━━━━━━━━━\n🆔 @{MY_CHANNEL}\n🛡️ {BRAND}"
+                await client.send_message(MY_CHANNEL, msg, link_preview=False)
+                count += 1
+                await asyncio.sleep(20)
     finally:
         await client.disconnect()
 
 if __name__ == "__main__":
-    asyncio.run(debug_hunter())
+    asyncio.run(main())
