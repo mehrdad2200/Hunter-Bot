@@ -4,7 +4,7 @@ from telethon import TelegramClient, functions, types
 # تنظیمات اصلی
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
-MY_CHANNEL = os.getenv('MY_CHANNEL', 'favproxy')
+MY_CHANNEL = os.getenv('MY_CHANNEL', 'favproxy') # آدرس جدید کانال
 
 # سورس‌های خارجی گیت‌هاب
 GITHUB_SOURCES = [
