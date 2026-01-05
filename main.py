@@ -10,7 +10,7 @@ STRING_SESSION = os.getenv('STRING_SESSION', '')
 MY_CHANNEL = 'favproxy'  # آیدی کانال بدون @
 DB_FILE = "hunter_db.json"
 START_TIME = time.time()
-LIMIT_TIME = 300  # ۵ دقیقه فعالیت
+LIMIT_TIME = 450  # 9 دقیقه فعالیت
 
 # منابع گیت‌هاب برای شکار بیشتر
 GITHUB_SOURCES = [
@@ -125,7 +125,7 @@ async def main():
                     print(f"✅ ارسال شد: {proto} (Ping: {ping})")
                     await asyncio.sleep(12) # فاصله برای جلوگیری از اسپم
 
-            await asyncio.sleep(30) # انتظار برای دیتای جدید
+            await asyncio.sleep(10) # انتظار برای دیتای جدید
 
     finally:
         await client.disconnect()
