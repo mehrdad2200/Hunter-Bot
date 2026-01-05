@@ -1,4 +1,117 @@
 {
+    "archive": [
+        {
+            "link": "vless://b65f4df7-f6af-42b2-877a-cef33f21675e@185.7.240.32:2096?path=%2Fsnippets&security=tls&encryption=none&host=kejiland.freewarp.eu.org&fp=chrome&type=ws&sni=kejiland.freewarp.eu.org#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%B3%F0%9F%87%B1"
+        },
+        {
+            "link": "trojan://f282b878-8711-45a1-8c69-5564172123c1@172.67.181.173:443?path=%2FStupid-World%2F103.106.228.126-2053&security=tls&host=vpn.stupidworld.web.id&type=ws&sni=vpn.stupidworld.web.id#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%A6"
+        },
+        {
+            "link": "vless://376734bc-4db8-4317-b451-af0262cb01c7@172.67.171.131:2087/?type=ws&encryption=none&host=invincible.fafa20.shop&path=%2FFnxOCItzWpgMrgmD%2FNzguNDYuNTYuNDI%3D%3Fed%3D2560&security=tls&sni=invINCIBLE.FAfa20.SHOp&alpn=http%2F1.1&fp=randomized#%F0%9F%94%92%20VL-WS-TLS%20%F0%9F%8F%B4%E2%80%8D%E2%98%A0%EF%B8%8F%20NA-172.67.171.131%3A2087"
+        },
+        {
+            "link": "trojan://NISHIKUITAN111@104.21.75.142:443/?type=tcp&security=tls#%40Hope_Net-join-us-on-Telegram"
+        },
+        {
+            "link": "trojan://0RiSuJPsug%23v@104.21.43.168:443/?type=ws&host=2.lINK-KoN.IR&path=%2FtrTcwZRw8JC0TPp6d1%3Fed%3D2560&security=tls&sni=2.link-kon.ir&alpn=h3%2Ch2%2Chttp%2F1.1&fp=randomized#%E2%87%9D%20%40GpConnectSho%20%DA%A9%D8%A7%D9%86%DA%A9%D8%AA%20%D8%B4%D9%88%21%20%F0%9F%93%8C"
+        },
+        {
+            "link": "trojan://tg-dns68@162.159.152.113:443/?type=ws&host=vip.putata.eu.org&path=%2F%3Fed%3D2560&security=tls&sni=vip.putata.eu.org#%40Hope_Net-join-us-on-Telegram"
+        },
+        {
+            "link": "vless://57ba2ab1-a283-42eb-82ee-dc3561a805b8@104.21.3.219:8443?path=%2F57ba2ab1&security=tls&encryption=none&host=ovhwuxian.pai50288.uk&fp=chrome&type=ws&sni=ovhwuxian.pai50288.uk#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%A6"
+        },
+        {
+            "link": "vless://1a25f8ad-cad2-4e93-b5bf-34e42bcac02a@platform.wise.com:2053?path=%2F&security=tls&encryption=none&insecure=0&host=sni.111000.dynv6.net&type=ws&allowInsecure=0&sni=sni.111000.dynv6.net#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A9%F0%9F%87%AA"
+        },
+        {
+            "link": "vless://2036e2c3-18a5-4eed-9db4-f91a7f02c7d5@104.21.112.1:80?path=%2F193.123.81.105%3D443&security=&encryption=none&host=zoomgov.vipren.biz.id&type=ws#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%A6"
+        },
+        {
+            "link": "vless://b6f52521-c65d-43d6-bca4-76790c68d6fd@104.25.167.242:443/?type=ws&encryption=none&host=sweet-sound-523a.66500-280b-471c-b2b8-d68b7f9960014.workers.dev&path=%2F%3Fed%3D2048&security=tls&sni=sweet-sound-523a.66500-280b-471c-b2b8-d68b7f9960014.workers.dev&alpn=h3%2Ch2&fp=chrome#%40Hope_Net-join-us-on-Telegram"
+        },
+        {
+            "link": "vless://6c11247b-6078-461a-93d5-22e4df284e6d@104.21.36.57:443?path=%2Fwsv%2F6c11247b-6078-461a-93d5-22e4df284e6d&security=tls&encryption=none&host=mirror.fullmargintraders.com&fp=chrome&type=ws&sni=mirror.fullmargintraders.com#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%A6"
+        },
+        {
+            "link": "vless://2928d83a-ca75-4d52-b437-fa78c7601378@104.20.17.149:443/?type=ws&encryption=none&host=freedom-1rj.pages.dev&path=%2Ffreedom-1rj.pages.dev%2F%3Fed%3D2560&security=tls&sni=freedom-1rj.pages.dev&fp=randomized#%40Hope_Net-join-us-on-Telegram"
+        },
+        {
+            "link": "trojan://auto@104.20.22.253:443/?type=ws&host=b96ef9ae.trojanfree-76s.pages.dev&security=tls&sni=b96ef9ae.trojanfree-76s.pages.dev"
+        },
+        {
+            "link": "vless://dfdf1c0a-5e52-4746-88bd-19d4e4ac7853@172.67.78.196:80?path=%2F%3Fed%3D2560&security=none&encryption=none&host=tannaz.juveitaly.dpdns.org&fp=random&type=ws&sni=tannaz.juveitaly.dpdns.org#Channel%20id%3A%20%40ShadowProxy66%F0%9F%87%A9%F0%9F%87%AA"
+        },
+        {
+            "link": "vless://b65f4df7-f6af-42b2-877a-cef33f21675e@195.26.229.32:2096?path=%2Fsnippets&security=tls&encryption=none&host=kejiland.freewarp.eu.org&type=ws&sni=kejiland.freewarp.eu.org#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%BE"
+        }
+    ],
+    "sent_msgs": [
+        {
+            "id": 616,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 617,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 618,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 619,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 620,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 621,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 622,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 623,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 624,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 625,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 626,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 627,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 628,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 629,
+            "time": "2026-01-05T14:43:42.171066"
+        },
+        {
+            "id": 630,
+            "time": "2026-01-05T14:43:42.171066"
+        }
+    ],
+    "daily": {
+        "date": "1404/10/16",
+        "count": 15
+    },
     "configs_archive": [
         {
             "link": "vless://57ba2ab1-a283-42eb-82ee-dc3561a805b8@104.21.3.219:8443?path=%2F57ba2ab1&security=tls&encryption=none&host=ovhwuxian.pai50288.uk&fp=chrome&type=ws&sni=ovhwuxian.pai50288.uk#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%A8%F0%9F%87%A6",
