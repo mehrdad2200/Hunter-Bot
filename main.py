@@ -1,113 +1,145 @@
-import os, re, asyncio, json, time, requests
+import os, re, asyncio, json, time, requests, socket
 from datetime import datetime, timedelta
 from telethon import TelegramClient, functions, types
 from telethon.sessions import StringSession
 
-# --- تنظیمات ---
-API_ID = os.getenv('API_ID')
-API_HASH = os.getenv('API_HASH')
-STRING_SESSION = os.getenv('STRING_SESSION')
-MY_CHANNEL = -1003576265638 
-
+# --- تنظیمات سیستمی ---
+API_ID = int(os.getenv('API_ID', 0))
+API_HASH = os.getenv('API_HASH', '')
+STRING_SESSION = os.getenv('STRING_SESSION', '')
+MY_CHANNEL = -1003576265638  # آیدی عددی کانال تو
 DB_FILE = "hunter_db.json"
 START_TIME = time.time()
-RUN_DURATION = 300 
+RUN_DURATION = 300  # ۵ دقیقه فعالیت در هر بار اجرا
+
+# ایموجی اعداد برای شماره پست
+NUM_EMOJI = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
 
 def get_jalali_date_time():
+    """محاسبه دقیق زمان و تاریخ شمسی و ساعت ایران"""
     now = datetime.utcnow() + timedelta(hours=3, minutes=30)
-    return "1404/10/16", now.strftime('%H:%M'), now
+    gy, gm, gd = now.year, now.month, now.day
+    g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+    jy = gy - 621
+    days = (gy - 1) * 365 + (gy - 1) // 4 - (gy - 1) // 100 + (gy - 1) // 400 + g_d_m[gm - 1] + gd
+    jy_all_days = days - ((jy + 620) * 365 + (jy + 620) // 4 - (jy + 620) // 100 + (jy + 620) // 400)
+    if jy_all_days > 286:
+        jy += 1; jy_all_days -= 286
+    else:
+        jy_all_days += 79
+    if jy_all_days <= 186:
+        jm = 1 + (jy_all_days - 1) // 31
+        jd = 1 + (jy_all_days - 1) % 31
+    else:
+        jm = 7 + (jy_all_days - 187) // 30
+        jd = 1 + (jy_all_days - 187) % 30
+    return f"{jy}/{jm:02d}/{jd:02d}", now.strftime('%H:%M'), now
 
-def get_geo_info(link):
+def get_geo_and_ping(link):
+    """تست آی‌پی، استخراج کشور، پرچم و پینگ واقعی"""
     try:
-        # استخراج هاست برای تشخیص کشور
         host_match = re.search(r'@([^:/?#]+)', link)
         if not host_match: host_match = re.search(r'://([^:/?#]+)', link)
-        if host_match:
-            host = host_match.group(1)
-            res = requests.get(f"http://ip-api.com/json/{host}", timeout=2).json()
-            if res.get("status") == "success":
-                return res.get("country", "Global"), "".join([chr(ord(c) + 127397) for c in res.get("countryCode", "US").upper()])
+        if not host_match: return None
+        
+        host = host_match.group(1)
+        # تست پینگ TCP
+        start = time.time()
+        socket.create_connection((host, 443), timeout=1.5).close()
+        ping = int((time.time() - start) * 1000)
+        
+        # دریافت اطلاعات کشور
+        res = requests.get(f"http://ip-api.com/json/{host}?fields=status,country,countryCode", timeout=2).json()
+        if res.get("status") == "success":
+            code = res.get("countryCode", "US")
+            flag = "".join([chr(ord(c) + 127397) for c in code.upper()])
+            return {"country": res.get("country"), "flag": flag, "ping": ping}
     except: pass
-    return "Germany", "🇩🇪"
+    return None
+
+def number_to_emoji(n):
+    return "".join(NUM_EMOJI[int(d)] for d in str(n))
 
 async def main():
-    client = TelegramClient(StringSession(STRING_SESSION), int(API_ID), API_HASH)
+    client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     try:
         await client.connect()
-        print("🚀 شکارچی با قدرت کامل بیدار شد...")
-
+        # لود دیتابیس
         if os.path.exists(DB_FILE):
-            try:
-                with open(DB_FILE, "r") as f: db = json.load(f)
-            except: db = {}
-        else: db = {}
-
-        if "daily_stats" not in db: db["daily_stats"] = {"date": "", "count": 0}
-        if "configs_archive" not in db: db["configs_archive"] = []
+            with open(DB_FILE, "r") as f: db = json.load(f)
+        else:
+            db = {"archive": [], "sent_msgs": [], "daily": {"date": "", "count": 0, "start_members": 0}}
 
         j_date, j_time, now_dt = get_jalali_date_time()
-        if db["daily_stats"]["date"] != j_date:
-            db["daily_stats"] = {"date": j_date, "count": 0}
+        
+        # گزارش 00:00 و ریست آمار
+        if db["daily"]["date"] != j_date:
+            try:
+                full = await client(functions.channels.GetFullChannelRequest(MY_CHANNEL))
+                curr_mem = full.full_chat.participants_count
+                if db["daily"]["date"]:
+                    diff = curr_mem - db["daily"]["start_members"]
+                    msg = (f"📊 **خلاصه عملکرد ۲۴ ساعت گذشته**\n📅 تاریخ: {db['daily']['date']}\n"
+                           f"━━━━━━━━━━━━━━━━━━━━\n✅ سرورهای جدید: {db['daily']['count']}\n"
+                           f"👥 جذب عضو: {diff:+} نفر\n━━━━━━━━━━━━━━━━━━━━\n🆔 @favproxy")
+                    await client.send_message(MY_CHANNEL, msg)
+                db["daily"] = {"date": j_date, "count": 0, "start_members": curr_mem}
+            except: pass
 
-        # حلقه تا ۵ دقیقه
+        print("🔍 شروع جستجوی جهانی...")
         while time.time() - START_TIME < RUN_DURATION:
-            # جستجو برای انواع پروتکل‌ها
-            for query in ['vless://', 'trojan://']:
-                search = await client(functions.messages.SearchGlobalRequest(
-                    q=query, filter=types.InputMessagesFilterEmpty(), 
-                    min_date=None, max_date=None, offset_id=0, 
-                    offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=50
+            for kw in ['vless://', 'trojan://', 'ss://']:
+                res = await client(functions.messages.SearchGlobalRequest(
+                    q=kw, filter=types.InputMessagesFilterEmpty(),
+                    min_date=None, max_date=None, offset_id=0,
+                    offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=20
                 ))
-
-                for m in search.messages:
-                    # تفکیک لینک‌ها و اطمینان از کامل بودن متن
-                    full_msg = m.message or ""
-                    # اگر متن کوتاه بود، تلاش برای گرفتن پیام کامل
-                    if len(full_msg) < 50:
-                        try:
-                            full_msg = (await client.get_messages(m.peer_id, ids=m.id)).message
-                        except: continue
-
-                    links = re.findall(r'(vless|vmess|trojan|ss)://[^\s<>"]+', full_msg)
+                
+                for m in res.messages:
+                    if not m.message: continue
+                    links = re.findall(r'(?:vless|trojan|ss)://[^\s<>"]+', m.message)
                     for link in links:
-                        clean_link = link.strip()
-                        # فیلتر تکراری و لینک‌های ناقص
-                        if len(clean_link) < 20 or any(x['link'] == clean_link for x in db["configs_archive"]):
-                            continue
+                        if any(x['link'] == link for x in db["archive"]): continue
                         
-                        proto = clean_link.split("://")[0].upper()
-                        db["daily_stats"]["count"] += 1
-                        c_num = db["daily_stats"]["count"]
+                        geo = get_geo_and_ping(link)
+                        if not geo or geo['ping'] > 1200: continue # فیلتر پینگ بالا
                         
-                        country, flag = get_geo_info(clean_link)
-
+                        proto = link.split('://')[0].upper()
+                        db["daily"]["count"] += 1
+                        c_num = db["daily"]["count"]
+                        
                         text = (
-                            f"{flag} **{proto} PREMIUM** | #{c_num}\n"
+                            f"{geo['flag']} **{proto} PREMIUM** | {number_to_emoji(c_num)}\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
-                            f"📍 Location: {country}\n"
-                            f"⚡️ Status: Online & Verified\n"
+                            f"📍 Location: {geo['country']}\n"
+                            f"⚡️ Ping: {geo['ping']}ms (Stable)\n"
+                            f"🛰 Status: Online & Verified\n"
                             f"📅 {j_date} | ⏰ {j_time}\n"
-                            f"🏷 #daily_{c_num} #{proto.lower()}\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
                             f"🔗 **Config (Click to Copy):**\n\n"
-                            f"`{clean_link}`\n\n"
+                            f"`{link}`\n\n"
                             f"━━━━━━━━━━━━━━━━━━━━\n"
+                            f"🏷 #{proto.lower()} #{geo['country'].replace(' ', '_')}\n"
                             f"🆔 @favproxy | 📡 @favme"
                         )
+                        
+                        sent = await client.send_message(MY_CHANNEL, text)
+                        db["archive"].append({"link": link, "time": now_dt.isoformat()})
+                        db["sent_msgs"].append({"id": sent.id, "time": now_dt.isoformat()})
+                        
+                        # پاکسازی ۲۴ ساعته (فقط پیام‌های قدیمی همین ربات)
+                        day_ago = now_dt - timedelta(hours=24)
+                        for old_msg in db["sent_msgs"][:]:
+                            if datetime.fromisoformat(old_msg["time"]) < day_ago:
+                                try:
+                                    await client.delete_messages(MY_CHANNEL, [old_msg["id"]])
+                                    db["sent_msgs"].remove(old_msg)
+                                except: pass
+                        
+                        with open(DB_FILE, "w") as f: json.dump(db, f, indent=4)
+                        await asyncio.sleep(15)
 
-                        try:
-                            await client.send_message(MY_CHANNEL, text)
-                            db["configs_archive"].append({"link": clean_link, "proto": proto, "country": country, "flag": flag, "time": j_time})
-                            print(f"✅ ارسال شد: {proto} {c_num}")
-                            # ذخیره در هر مرحله
-                            with open(DB_FILE, "w") as f: json.dump(db, f, indent=4)
-                            await asyncio.sleep(10) # وقفه برای جلوگیری از بن شدن
-                        except Exception as e:
-                            print(f"❌ خطا در ارسال: {e}")
-
-            print("🔄 در حال استراحت کوتاه برای دور بعدی جستجو...")
             await asyncio.sleep(30)
-
     finally:
         await client.disconnect()
 
