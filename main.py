@@ -1,4 +1,5 @@
 import os, re, asyncio, json, time, requests, random
+from datetime import datetime, timedelta
 from telethon import TelegramClient, functions, types
 from telethon.sessions import StringSession
 
@@ -10,7 +11,6 @@ MY_CHANNEL = 'favproxy'
 START_TIME = time.time()
 LIMIT_TIME = 300 
 
-# منابع گیت‌هاب
 SOURCES = [
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/vless.txt",
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/trojan.txt",
@@ -18,24 +18,37 @@ SOURCES = [
 ]
 
 async def main():
-    client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
+    # استفاده از هویت ثابت برای کاهش حساسیت تلگرام
+    client = TelegramClient(
+        StringSession(STRING_SESSION), 
+        API_ID, 
+        API_HASH,
+        device_model="Mehrdad-Hunter",
+        system_version="Linux-Runner",
+        app_version="1.0"
+    )
+    
     try:
         await client.connect()
-        print("✅ وصل شد.")
         
+        # چک کردن اعتبار سشن
+        if not await client.is_user_authorized():
+            print("❌ سشن باطل شده! مهرداد جان، باید سشن جدید بگیری و در Secrets بذاری.")
+            return
+
+        print("✅ متصل شد. شروع شکار...")
         sent_count = 0
-        
+
         while time.time() - START_TIME < LIMIT_TIME:
             links = []
-            
-            # ۱. گرفتن از گیت‌هاب
+            # ۱. گیت‌هاب
             for url in SOURCES:
                 try:
                     r = requests.get(url, timeout=5)
                     links.extend(re.findall(r'(?:vless|trojan|ss|vmess)://[^\s<>"]+', r.text))
                 except: continue
 
-            # ۲. گرفتن از تلگرام
+            # ۲. تلگرام
             for kw in ['vless://', 'trojan://']:
                 try:
                     res = await client(functions.messages.SearchGlobalRequest(
@@ -54,9 +67,9 @@ async def main():
             for link in unique_links:
                 if time.time() - START_TIME > LIMIT_TIME or sent_count >= 100: break
                 
-                # فعلاً پینگ تست رو حذف کردم که فقط مطمئن بشیم ارسال انجام میشه
                 sent_count += 1
                 proto = link.split('://')[0].upper()
+                # تاریخ و ساعت ایران
                 t_now = (datetime.utcnow() + timedelta(hours=3, minutes=30)).strftime('%H:%M')
                 
                 msg = (
@@ -71,17 +84,19 @@ async def main():
 
                 try:
                     await client.send_message(MY_CHANNEL, msg, parse_mode='html', link_preview=False)
-                    print(f"✅ فرستادم: {proto}")
-                    await asyncio.sleep(5) # سرعت رو بردم بالا
+                    print(f"✅ ارسال شد: {proto} #{sent_count}")
+                    await asyncio.sleep(5) # سرعت بالا برای ۱۰۰ شکار
                 except Exception as e:
-                    print(f"❌ ارور تلگرام: {e}")
-                    await asyncio.sleep(30)
+                    print(f"❌ خطا در ارسال: {e}")
+                    if "FLOOD" in str(e).upper():
+                        print("⚠️ تلگرام محدود کرد. صبر می‌کنیم...")
+                        await asyncio.sleep(120)
+                    break
             
-            await asyncio.sleep(20)
+            await asyncio.sleep(15)
 
     finally:
         await client.disconnect()
 
 if __name__ == "__main__":
-    from datetime import datetime, timedelta
     asyncio.run(main())
