@@ -1,8 +1,8 @@
-name: Hunter Bot Pro
+name: Hunter 15Min Cycle
 on:
   schedule:
-    - cron: '*/15 * * * *' # هر 15 دقیقه یکبار اجرا میشه
-  workflow_dispatch:
+    - cron: '*/15 * * * *' # بیداری دقیق هر 15 دقیقه
+  workflow_dispatch: # قابلیت اجرای دستی برای تست
 
 jobs:
   build:
@@ -14,17 +14,18 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: pip install telethon
+      - name: Install
+        run: pip install telethon
       - name: Run Hunter
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           STRING_SESSION: ${{ secrets.STRING_SESSION }}
         run: python main.py
-      - name: Save
+      - name: Update Database
         run: |
           git config --global user.name "Mehrdad-Hunter"
           git config --global user.email "bot@github.com"
           git add hunter_db.json
-          git commit -m "Auto Update" || exit 0
+          git commit -m "Cycle Completed" || exit 0
           git push
