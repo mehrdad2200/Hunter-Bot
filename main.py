@@ -9,7 +9,7 @@ API_HASH = os.getenv('API_HASH', '')
 STRING_SESSION = os.getenv('STRING_SESSION', '')
 MY_CHANNEL = 'favproxy' 
 START_TIME = time.time()
-LIMIT_TIME = 300 # ۵ دقیقه بیدار ماندن
+LIMIT_TIME = 600 # 10 دقیقه بیدار ماندن
 
 GITHUB_SOURCES = [
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/vless.txt",
