@@ -1,7 +1,7 @@
 name: Hunter Bot Pro
 on:
   schedule:
-    - cron: '*/20 * * * *' # هر ۲۰ دقیقه یکبار اجرا میشه
+    - cron: '*/15 * * * *' # هر 15 دقیقه یکبار اجرا میشه
   workflow_dispatch:
 
 jobs:
