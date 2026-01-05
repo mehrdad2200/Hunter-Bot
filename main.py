@@ -19,18 +19,14 @@ def get_jalali_date_time():
 
 def get_geo_info(link):
     try:
-        # استخراج آی‌پی یا دامنه از لینک
-        ip_match = re.search(r'@([^:/]+)', link)
-        if not ip_match: ip_match = re.search(r'://([^:/]+)', link)
-        
-        if ip_match:
-            host = ip_match.group(1)
-            res = requests.get(f"http://ip-api.com/json/{host}", timeout=3).json()
+        # استخراج هاست برای تشخیص کشور
+        host_match = re.search(r'@([^:/?#]+)', link)
+        if not host_match: host_match = re.search(r'://([^:/?#]+)', link)
+        if host_match:
+            host = host_match.group(1)
+            res = requests.get(f"http://ip-api.com/json/{host}", timeout=2).json()
             if res.get("status") == "success":
-                country = res.get("country", "Global")
-                code = res.get("countryCode", "US")
-                flag = "".join([chr(ord(c) + 127397) for c in code.upper()])
-                return country, flag
+                return res.get("country", "Global"), "".join([chr(ord(c) + 127397) for c in res.get("countryCode", "US").upper()])
     except: pass
     return "Germany", "🇩🇪"
 
@@ -38,10 +34,12 @@ async def main():
     client = TelegramClient(StringSession(STRING_SESSION), int(API_ID), API_HASH)
     try:
         await client.connect()
-        print("🛰️ شکارچی در حال جستجوی عمیق...")
+        print("🚀 شکارچی با قدرت کامل بیدار شد...")
 
         if os.path.exists(DB_FILE):
-            with open(DB_FILE, "r") as f: db = json.load(f)
+            try:
+                with open(DB_FILE, "r") as f: db = json.load(f)
+            except: db = {}
         else: db = {}
 
         if "daily_stats" not in db: db["daily_stats"] = {"date": "", "count": 0}
@@ -51,58 +49,64 @@ async def main():
         if db["daily_stats"]["date"] != j_date:
             db["daily_stats"] = {"date": j_date, "count": 0}
 
+        # حلقه تا ۵ دقیقه
         while time.time() - START_TIME < RUN_DURATION:
-            search = await client(functions.messages.SearchGlobalRequest(
-                q='vless://', filter=types.InputMessagesFilterEmpty(), 
-                min_date=None, max_date=None, offset_id=0, 
-                offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=30
-            ))
+            # جستجو برای انواع پروتکل‌ها
+            for query in ['vless://', 'trojan://']:
+                search = await client(functions.messages.SearchGlobalRequest(
+                    q=query, filter=types.InputMessagesFilterEmpty(), 
+                    min_date=None, max_date=None, offset_id=0, 
+                    offset_peer=types.InputPeerEmpty(), offset_rate=0, limit=50
+                ))
 
-            for m in search.messages:
-                found_links = re.findall(r'(vless|vmess|trojan|ss)://[^\s<>"]+', m.message or "")
-                for link in found_links:
-                    clean_link = link.strip()
-                    if any(x['link'] == clean_link for x in db["configs_archive"]): continue
-                    
-                    proto = clean_link.split("://")[0].upper()
-                    db["daily_stats"]["count"] += 1
-                    c_num = db["daily_stats"]["count"]
-                    
-                    # دریافت لوکیشن واقعی از روی لینک
-                    country, flag = get_geo_info(clean_link)
+                for m in search.messages:
+                    # تفکیک لینک‌ها و اطمینان از کامل بودن متن
+                    full_msg = m.message or ""
+                    # اگر متن کوتاه بود، تلاش برای گرفتن پیام کامل
+                    if len(full_msg) < 50:
+                        try:
+                            full_msg = (await client.get_messages(m.peer_id, ids=m.id)).message
+                        except: continue
 
-                    # 💎 متن نهایی با کد کامل
-                    text = (
-                        f"{flag} **{proto} PREMIUM** | #{c_num}\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"📍 Location: {country}\n"
-                        f"⚡️ Status: Online & Verified\n"
-                        f"📅 {j_date} | ⏰ {j_time}\n"
-                        f"🏷 #daily_{c_num} #{proto.lower()}\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🔗 **Config (Click to Copy):**\n\n"
-                        f"`{clean_link}`\n\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🆔 @favproxy | 📡 @favme"
-                    )
+                    links = re.findall(r'(vless|vmess|trojan|ss)://[^\s<>"]+', full_msg)
+                    for link in links:
+                        clean_link = link.strip()
+                        # فیلتر تکراری و لینک‌های ناقص
+                        if len(clean_link) < 20 or any(x['link'] == clean_link for x in db["configs_archive"]):
+                            continue
+                        
+                        proto = clean_link.split("://")[0].upper()
+                        db["daily_stats"]["count"] += 1
+                        c_num = db["daily_stats"]["count"]
+                        
+                        country, flag = get_geo_info(clean_link)
 
-                    try:
-                        await client.send_message(MY_CHANNEL, text)
-                        db["configs_archive"].append({
-                            "link": clean_link, 
-                            "proto": proto, 
-                            "country": country, 
-                            "flag": flag, 
-                            "time": j_time
-                        })
-                        print(f"✅ ارسال موفق: {proto} شماره {c_num}")
-                        with open(DB_FILE, "w") as f: json.dump(db, f, indent=4)
-                        await asyncio.sleep(15) # وقفه برای امنیت اکانت
-                    except Exception as e:
-                        print(f"❌ خطا در ارسال: {e}")
-                        continue
-            
-            await asyncio.sleep(30) # وقفه بین دورهای جستجو
+                        text = (
+                            f"{flag} **{proto} PREMIUM** | #{c_num}\n"
+                            f"━━━━━━━━━━━━━━━━━━━━\n"
+                            f"📍 Location: {country}\n"
+                            f"⚡️ Status: Online & Verified\n"
+                            f"📅 {j_date} | ⏰ {j_time}\n"
+                            f"🏷 #daily_{c_num} #{proto.lower()}\n"
+                            f"━━━━━━━━━━━━━━━━━━━━\n"
+                            f"🔗 **Config (Click to Copy):**\n\n"
+                            f"`{clean_link}`\n\n"
+                            f"━━━━━━━━━━━━━━━━━━━━\n"
+                            f"🆔 @favproxy | 📡 @favme"
+                        )
+
+                        try:
+                            await client.send_message(MY_CHANNEL, text)
+                            db["configs_archive"].append({"link": clean_link, "proto": proto, "country": country, "flag": flag, "time": j_time})
+                            print(f"✅ ارسال شد: {proto} {c_num}")
+                            # ذخیره در هر مرحله
+                            with open(DB_FILE, "w") as f: json.dump(db, f, indent=4)
+                            await asyncio.sleep(10) # وقفه برای جلوگیری از بن شدن
+                        except Exception as e:
+                            print(f"❌ خطا در ارسال: {e}")
+
+            print("🔄 در حال استراحت کوتاه برای دور بعدی جستجو...")
+            await asyncio.sleep(30)
 
     finally:
         await client.disconnect()
