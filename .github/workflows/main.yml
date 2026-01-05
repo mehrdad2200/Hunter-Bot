@@ -1,32 +1,29 @@
-name: Hunter 5Min Active Cycle
+name: FavProxy
+
 on:
   schedule:
-    - cron: '*/10 * * * *' # هر 10 دقیقه بیدار می‌شود
+    - cron: '*/15 * * * *' # هر ۱۵ دقیقه اجرا می‌شود
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+
       - name: Install Dependencies
         run: pip install telethon requests
-      - name: Run Hunter
-        timeout-minutes: 6 # جلوگیری از گیر کردن بیش از حد
+
+      - name: Start Global Search
+        timeout-minutes: 10
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
           STRING_SESSION: ${{ secrets.STRING_SESSION }}
         run: python main.py
-      - name: Update Database
-        run: |
-          git config --global user.name "Mehrdad-Hunter"
-          git config --global user.email "bot@github.com"
-          git add hunter_db.json
-          git commit -m "Stats Updated" || exit 0
-          git push
