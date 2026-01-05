@@ -1,4 +1,4 @@
-import os, re, asyncio, json, time, requests, socket, base64
+import os, re, asyncio, json, time, requests, socket, base64, random
 from datetime import datetime, timedelta
 from telethon import TelegramClient, functions, types
 from telethon.sessions import StringSession
@@ -7,17 +7,14 @@ from telethon.sessions import StringSession
 API_ID = int(os.getenv('API_ID', 0))
 API_HASH = os.getenv('API_HASH', '')
 STRING_SESSION = os.getenv('STRING_SESSION', '')
-MY_CHANNEL = 'favproxy'  # آیدی کانال بدون @
-DB_FILE = "hunter_db.json"
+MY_CHANNEL = 'favproxy' 
 START_TIME = time.time()
-LIMIT_TIME = 450  # 9 دقیقه فعالیت
+LIMIT_TIME = 300 # ۵ دقیقه بیدار ماندن
 
-# منابع گیت‌هاب برای شکار بیشتر
 GITHUB_SOURCES = [
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/vless.txt",
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/trojan.txt",
-    "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all.txt",
-    "https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity"
+    "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all.txt"
 ]
 
 def get_jalali_now():
@@ -46,32 +43,31 @@ def check_ping(host, port):
     except: return False
 
 async def main():
+    if not STRING_SESSION:
+        print("❌ STRING_SESSION یافت نشد!")
+        return
+
     client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     try:
         await client.connect()
-        print("✅ شکارچی متصل شد...")
+        print("✅ اتصال برقرار شد. شروع شکار...")
 
-        # مدیریت دیتابیس برای جلوگیری از تکرار و پاکسازی
-        db = {"archive": [], "sent_msgs": [], "daily_count": 0}
-        if os.path.exists(DB_FILE):
-            try:
-                with open(DB_FILE, "r") as f: db.update(json.load(f))
-            except: pass
-
-        j_date, j_time, now_dt = get_jalali_now()
+        # حافظه موقت برای جلوگیری از تکرار در یک اجرا
+        sent_in_this_run = set()
+        j_date, _, _ = get_jalali_now()
 
         while time.time() - START_TIME < LIMIT_TIME:
             links_pool = []
             
-            # ۱. استخراج از گیت‌هاب
+            # ۱. گیت‌هاب
             for url in GITHUB_SOURCES:
                 try:
                     r = requests.get(url, timeout=5)
                     links_pool.extend(re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', r.text))
                 except: continue
 
-            # ۲. استخراج از تلگرام
-            for kw in ['vless://', 'trojan://', 'vmess://']:
+            # ۲. تلگرام با پارامترهای کامل HTML
+            for kw in ['vless://', 'trojan://']:
                 try:
                     res = await client(functions.messages.SearchGlobalRequest(
                         q=kw, filter=types.InputMessagesFilterEmpty(),
@@ -82,54 +78,45 @@ async def main():
                         if m.message: links_pool.extend(re.findall(r'(?:vless|vmess|trojan|ss)://[^\s<>"]+', m.message))
                 except: continue
 
-            # حذف تکراری‌ها
             unique_links = list(set(links_pool))
-            random_links = random.sample(unique_links, min(len(unique_links), 50))
+            random.shuffle(unique_links)
 
-            for link in random_links:
+            for link in unique_links:
                 if time.time() - START_TIME > LIMIT_TIME: break
-                if link in db["archive"]: continue
+                if link in sent_in_this_run: continue
 
                 host, port = get_server_address(link)
                 ping = check_ping(host, port) if host else False
 
                 if ping:
-                    db["daily_count"] += 1
+                    _, j_time, _ = get_jalali_now()
                     proto = link.split('://')[0].upper()
                     
+                    # --- چیدمان HTML (کد مونو-اسپیس برای کپی راحت) ---
                     text = (
-                        f"🛡️ **{proto} HUNTER** | #{db['daily_count']}\n"
+                        f"🛡️ <b>{proto} HUNTER</b>\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"⚡️ Ping: {ping}ms (Online)\n"
+                        f"⚡️ <b>Ping:</b> <code>{ping}ms</code> (Online)\n"
                         f"📅 {j_date} | ⏰ {j_time}\n"
                         f"━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🔗 **Config:**\n`{link.strip()}`\n"
-                        f"━━━━━━━━━━━━━━━━━━━━\n"
+                        f"🔗 <b>Config (Click to Copy):</b>\n"
+                        f"<code>{link.strip()}</code>\n\n"
                         f"🆔 @{MY_CHANNEL} | 🛰️ @favme"
                     )
 
-                    sent = await client.send_message(MY_CHANNEL, text)
-                    db["archive"].append(link)
-                    db["sent_msgs"].append({"id": sent.id, "time": now_dt.isoformat()})
-                    
-                    # پاکسازی ۲۴ ساعته
-                    cutoff = now_dt - timedelta(hours=24)
-                    for msg in db["sent_msgs"][:]:
-                        if datetime.fromisoformat(msg["time"]) < cutoff:
-                            try:
-                                await client.delete_messages(MY_CHANNEL, [msg["id"]])
-                                db["sent_msgs"].remove(msg)
-                            except: pass
+                    try:
+                        await client.send_message(MY_CHANNEL, text, parse_mode='html', link_preview=False)
+                        sent_in_this_run.add(link)
+                        print(f"✅ ارسال شد: {proto}")
+                        await asyncio.sleep(12) 
+                    except Exception as e:
+                        print(f"❌ خطا در ارسال: {e}")
+                        await asyncio.sleep(30)
 
-                    with open(DB_FILE, "w") as f: json.dump(db, f)
-                    print(f"✅ ارسال شد: {proto} (Ping: {ping})")
-                    await asyncio.sleep(12) # فاصله برای جلوگیری از اسپم
-
-            await asyncio.sleep(10) # انتظار برای دیتای جدید
+            await asyncio.sleep(20) # انتظار برای دور بعدی جستجو
 
     finally:
         await client.disconnect()
 
 if __name__ == "__main__":
-    import random
     asyncio.run(main())
