@@ -2,39 +2,134 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>پنل آرشیو مهرداد هانتر</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEHRDAD HUNTER | آرشیو هوشمند</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #121212; color: #eee; font-family: Tahoma; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: #1e1e1e; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-right: 5px solid #00e676; position: relative; }
-        .time { font-size: 12px; color: #888; }
-        .source { font-size: 12px; background: #333; padding: 2px 8px; border-radius: 4px; color: #00e676; }
-        .config-text { display: block; background: #000; padding: 10px; margin-top: 10px; font-size: 11px; word-break: break-all; border-radius: 5px; color: #bbb; cursor: pointer; }
-        h1 { text-align: center; color: #00e676; }
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;400;700;900&display=swap');
+        :root { --primary: #000000; --accent: #2563eb; --bg: #ffffff; }
+        body { font-family: 'Vazirmatn', sans-serif; background-color: var(--bg); color: #111; }
+        
+        .btn-spinx { padding: 12px 28px; border-radius: 50px; font-weight: 700; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--accent); transform: translateY(-2px); shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        .card-config { background: #fff; border: 1px solid #f0f0f0; border-radius: 20px; padding: 20px; transition: 0.4s; }
+        .card-config:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        
+        .section-title { font-size: 3.5rem; line-height: 1; font-weight: 900; letter-spacing: -1px; }
+        .mono { font-family: monospace; }
+        
+        /* انیمیشن برای لود شدن کارت‌ها */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.5s ease forwards; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🛡️ آرشیو ۱۰۰ کانفیگ اخیر مهرداد هانتر</h1>
-        <div id="list">Loading...</div>
-    </div>
+
+    <nav class="py-6 px-8 md:px-20 flex justify-between items-center bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl font-black tracking-tighter uppercase">MEHRDAD<span class="text-blue-600">HUNTER</span></span>
+        </div>
+        <div class="flex gap-4">
+            <a href="https://t.me/favproxy" target="_blank" class="text-xs font-bold uppercase tracking-widest hover:text-blue-600 transition">Telegram</a>
+            <button onclick="location.reload()" class="text-xs font-bold uppercase tracking-widest border-b-2 border-black">Refresh</button>
+        </div>
+    </nav>
+
+    <header class="pt-16 pb-10 px-8 md:px-20">
+        <div class="max-w-6xl mx-auto">
+            <p class="text-blue-600 font-bold uppercase tracking-[3px] mb-4 text-sm">Real-time Connection Hub</p>
+            <h1 class="section-title mb-8">Premium <br> <span class="text-gray-400 italic">Configs Archive.</span></h1>
+            
+            <div class="flex flex-wrap items-center gap-6 mt-12">
+                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                    <span id="total-count" class="text-5xl font-black text-black block">00</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Servers</span>
+                </div>
+                <button onclick="copyAll()" class="btn-spinx btn-primary h-fit">
+                    <i class="fas fa-copy"></i>
+                    <span>کپی تمام کانفیگ‌ها</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="px-8 md:px-20 py-10">
+        <div id="config-grid" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+    </main>
+
+    <footer class="bg-gray-50 py-20 px-8 md:px-20 mt-20 border-t border-gray-100">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <p class="text-sm font-bold text-gray-400 uppercase tracking-widest">© 2026 MEHRDAD HUNTER - DIGITAL EXPERIENCE</p>
+            <div class="flex gap-6">
+                <a href="#" class="text-gray-400 hover:text-black transition"><i class="fab fa-telegram-plane text-2xl"></i></a>
+                <a href="#" class="text-gray-400 hover:text-black transition"><i class="fab fa-github text-2xl"></i></a>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        fetch('proxies_data.json')
-            .then(response => response.json())
-            .then(data => {
-                let html = '';
-                data.forEach(item => {
-                    html += `
-                        <div class="card">
-                            <span class="time">⏰ ساعت: ${item.time}</span>
-                            <span class="source">📍 منبع: ${item.source}</span>
-                            <code class="config-text" onclick="navigator.clipboard.writeText('${item.link}')">${item.link}</code>
-                        </div>
-                    `;
-                });
-                document.getElementById('list').innerHTML = html;
-            });
+        let allConfigs = [];
+
+        async function loadConfigs() {
+            try {
+                const response = await fetch('hunter_db.json');
+                const data = await response.json();
+                allConfigs = data.configs_archive || [];
+                
+                document.getElementById('total-count').innerText = allConfigs.length.toString().padStart(2, '0');
+                renderConfigs();
+            } catch (error) {
+                console.error("خطا در بارگذاری دیتابیس:", error);
+                document.getElementById('config-grid').innerHTML = '<p class="text-red-500">دیتابیس هنوز آماده نشده است...</p>';
+            }
+        }
+
+        function renderConfigs() {
+            const grid = document.getElementById('config-grid');
+            grid.innerHTML = allConfigs.reverse().map((conf, i) => `
+                <div class="card-config animate-fade" style="animation-delay: ${i * 0.05}s">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">#${conf.proto}</span>
+                        <span class="text-[18px]">${conf.flag}</span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-1">${conf.country}</h3>
+                    <div class="flex items-center gap-2 text-gray-400 text-xs mb-6">
+                        <i class="fas fa-bolt text-yellow-500"></i>
+                        <span>Ping: <b class="text-black mono">${conf.ping}ms</b></span>
+                    </div>
+                    
+                    <div class="relative group">
+                        <div class="absolute -top-10 left-0 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">Click to Copy</div>
+                        <code onclick="copySingle('${conf.link}')" class="block bg-gray-50 p-4 rounded-xl text-[10px] text-gray-500 break-all cursor-pointer hover:bg-gray-100 transition border border-dashed border-gray-200">
+                            ${conf.link.substring(0, 60)}...
+                        </code>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-gray-50 flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">Verified Server</span>
+                        <a href="${conf.link}" class="text-blue-600 text-xs font-bold hover:underline">اتصال مستقیم</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copySingle(link) {
+            navigator.clipboard.writeText(link);
+            alert("کانفیگ کپی شد!");
+        }
+
+        function copyAll() {
+            const allLinks = allConfigs.map(c => c.link).join('\n');
+            navigator.clipboard.writeText(allLinks);
+            alert("تمام کانفیگ‌ها (۱۰۰ مورد) کپی شدند!");
+        }
+
+        // اجرای اولیه
+        loadConfigs();
     </script>
 </body>
 </html>
