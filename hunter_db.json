@@ -20,5 +20,11 @@
             "link": "vless://b65f4df7-f6af-42b2-877a-cef33f21675e@185.7.240.32:2096?path=%2Fsnippets&security=tls&encryption=none&host=kejiland.freewarp.eu.org&fp=chrome&type=ws&sni=kejiland.freewarp.eu.org#Channel%20id%3A%20%40ShadowProxy66%20%F0%9F%87%B3%F0%9F%87%B1",
             "time": "2026-01-05 10:00:38.199474"
         }
-    ]
+    ],
+    "daily_stats": {
+        "date": "1405/03/22",
+        "count": 0,
+        "start_members": 5
+    },
+    "sent_messages": []
 }
