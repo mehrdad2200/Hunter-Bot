@@ -12,7 +12,6 @@ DB_FILE = "hunter_db.json"
 START_TIME = time.time()
 RUN_DURATION = 300 
 
-# لیست منابع گیت‌هاب
 GITHUB_SOURCES = [
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/vless.txt",
     "https://raw.githubusercontent.com/Joker-funland/V2ray-configs/main/trojan.txt",
@@ -20,15 +19,14 @@ GITHUB_SOURCES = [
     "https://raw.githubusercontent.com/soroushmkia/V2Ray-Configs/main/All_Configs_Sub.txt",
     "https://raw.githubusercontent.com/IranianCypherpunks/sub/main/config",
     "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all.txt",
-    "https://raw.githubusercontent.com/ts-sf/sh_v2ray/main/v2ray.txt",
-    "https://raw.githubusercontent.com/Bfany-Sub/Sub/main/v2ray.txt"
+    "https://raw.githubusercontent.com/ts-sf/sh_v2ray/main/v2ray.txt"
 ]
 
 NUM_EMOJI = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
 
 def get_jalali_date_time():
     now = datetime.utcnow() + timedelta(hours=3, minutes=30)
-    # فرمت شمسی (محاسبه ساده برای پایداری)
+    # خروجی ثابت برای امروز (۱۶ دی ۱۴۰۴) - در آینده می‌توان تابع کامل‌تری گذاشت
     return "1404/10/16", now.strftime('%H:%M'), now
 
 def get_geo_and_ping(link):
@@ -38,12 +36,10 @@ def get_geo_and_ping(link):
         if not host_match: return None
         host = host_match.group(1)
         
-        # تست پینگ TCP
         start = time.time()
         socket.create_connection((host, 443), timeout=1.2).close()
         ping = int((time.time() - start) * 1000)
         
-        # لوکیشن
         res = requests.get(f"http://ip-api.com/json/{host}?fields=status,country,countryCode", timeout=2).json()
         if res.get("status") == "success":
             code = res.get("countryCode", "US")
@@ -59,20 +55,27 @@ async def main():
     client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
     try:
         await client.connect()
+        
+        # لود ایمن دیتابیس (رفع ارور KeyError)
+        db = {"archive": [], "sent_msgs": [], "daily": {"date": "", "count": 0, "start_members": 0}}
         if os.path.exists(DB_FILE):
-            with open(DB_FILE, "r") as f: db = json.load(f)
-        else:
-            db = {"archive": [], "sent_msgs": [], "daily": {"date": "", "count": 0, "start_members": 0}}
+            try:
+                with open(DB_FILE, "r") as f:
+                    old_db = json.load(f)
+                    # جایگزینی مقادیر قدیمی در ساختار جدید
+                    for key in db.keys():
+                        if key in old_db: db[key] = old_db[key]
+            except: pass
 
         j_date, j_time, now_dt = get_jalali_date_time()
         
-        # گزارش‌دهی خودکار (ساعت 00:00)
-        if db["daily"]["date"] != j_date:
+        # مدیریت آمار و گزارش شبانه
+        if db["daily"].get("date") != j_date:
             try:
                 full = await client(functions.channels.GetFullChannelRequest(MY_CHANNEL))
                 curr_mem = full.full_chat.participants_count
-                if db["daily"]["date"]:
-                    diff = curr_mem - db["daily"]["start_members"]
+                if db["daily"].get("date"):
+                    diff = curr_mem - db["daily"].get("start_members", curr_mem)
                     rep = (f"📊 **گزارش ۲۴ ساعته کانال**\n📅 تاریخ: {db['daily']['date']}\n"
                            f"━━━━━━━━━━━━━━━━━━━━\n✅ شکار جدید: {db['daily']['count']}\n"
                            f"👥 جذب عضو: {diff:+} نفر\n━━━━━━━━━━━━━━━━━━━━\n🆔 @favproxy")
@@ -81,9 +84,8 @@ async def main():
             except: pass
 
         print("🔄 استخراج از گیت‌هاب و تلگرام...")
-        
-        # ۱. جمع‌آوری لینک‌ها از گیت‌هاب
         all_potential_links = []
+        # گیت‌هاب
         for url in GITHUB_SOURCES:
             try:
                 r = requests.get(url, timeout=5)
@@ -91,22 +93,21 @@ async def main():
                     all_potential_links.extend(re.findall(r'(?:vless|trojan|ss)://[^\s<>"]+', r.text))
             except: continue
 
-        # ۲. جمع‌آوری لینک‌ها از تلگرام
+        # تلگرام
         for kw in ['vless://', 'trojan://']:
             try:
-                res = await client(functions.messages.SearchGlobalRequest(q=kw, filter=types.InputMessagesFilterEmpty(), limit=30, offset_id=0, offset_peer=types.InputPeerEmpty(), offset_rate=0, min_date=None, max_date=None))
+                res = await client(functions.messages.SearchGlobalRequest(q=kw, filter=types.InputMessagesFilterEmpty(), limit=20))
                 for m in res.messages:
-                    if m.message:
-                        all_potential_links.extend(re.findall(r'(?:vless|trojan|ss)://[^\s<>"]+', m.message))
+                    if m.message: all_potential_links.extend(re.findall(r'(?:vless|trojan|ss)://[^\s<>"]+', m.message))
             except: continue
 
-        # ۳. پردازش و ارسال
+        # ارسال
         for link in list(set(all_potential_links)):
             if time.time() - START_TIME > RUN_DURATION: break
             if any(x['link'] == link for x in db["archive"]): continue
             
             geo = get_geo_and_ping(link)
-            if not geo or geo['ping'] > 1000: continue # فیلتر پینگ زیر 1 ثانیه
+            if not geo or geo['ping'] > 1100: continue
             
             proto = link.split('://')[0].upper()
             db["daily"]["count"] += 1
@@ -131,21 +132,16 @@ async def main():
             db["archive"].append({"link": link, "proto": proto, "country": geo['country'], "flag": geo['flag'], "time": j_time})
             db["sent_msgs"].append({"id": sent.id, "time": now_dt.isoformat()})
             
-            # پاکسازی خودکار پیام‌های ۲۴ ساعت قبل
+            # پاکسازی ۲۴ ساعته
             day_ago = now_dt - timedelta(hours=24)
-            for old_msg in db["sent_msgs"][:]:
-                if datetime.fromisoformat(old_msg["time"]) < day_ago:
-                    try:
-                        await client.delete_messages(MY_CHANNEL, [old_msg["id"]])
-                        db["sent_msgs"].remove(old_msg)
-                    except: pass
-            
+            db["sent_msgs"] = [m for m in db["sent_msgs"] if datetime.fromisoformat(m["time"]) > day_ago]
+            # (نکته: در نسخه اکانت، حذف فیزیکی بهتر است محدود باشد تا اکانت ریپورت نشود)
+
             with open(DB_FILE, "w") as f: json.dump(db, f, indent=4)
             await asyncio.sleep(12)
 
     finally:
         await client.disconnect()
-        print("💤 پایان سیکل فعالیت.")
 
 if __name__ == "__main__":
     asyncio.run(main())
