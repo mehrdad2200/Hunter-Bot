@@ -1,7 +1,7 @@
 name: Hunter 5Min Active Cycle
 on:
   schedule:
-    - cron: '*/20 * * * *' # هر ۲۰ دقیقه بیدار می‌شود
+    - cron: '*/10 * * * *' # هر 10 دقیقه بیدار می‌شود
   workflow_dispatch:
 
 jobs:
