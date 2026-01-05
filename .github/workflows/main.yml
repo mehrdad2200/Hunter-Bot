@@ -1,8 +1,8 @@
-name: Hunter 15Min Cycle
+name: Hunter 5Min Active Cycle
 on:
   schedule:
-    - cron: '*/15 * * * *' # بیداری دقیق هر 15 دقیقه
-  workflow_dispatch: # قابلیت اجرای دستی برای تست
+    - cron: '*/20 * * * *' # هر ۲۰ دقیقه بیدار می‌شود
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,9 +14,10 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Install
-        run: pip install telethon
+      - name: Install Dependencies
+        run: pip install telethon requests
       - name: Run Hunter
+        timeout-minutes: 6 # جلوگیری از گیر کردن بیش از حد
         env:
           API_ID: ${{ secrets.API_ID }}
           API_HASH: ${{ secrets.API_HASH }}
@@ -27,5 +28,5 @@ jobs:
           git config --global user.name "Mehrdad-Hunter"
           git config --global user.email "bot@github.com"
           git add hunter_db.json
-          git commit -m "Cycle Completed" || exit 0
+          git commit -m "Stats Updated" || exit 0
           git push
