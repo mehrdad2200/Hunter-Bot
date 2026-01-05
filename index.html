@@ -1,1 +1,40 @@
-<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><title>🛡️ MEHRDAD HUNTER 🛡️</title></head><body style="background:#0a0a0a;text-align:center;font-family:tahoma;"><h1 style="color:#00ff88">🛡️ MEHRDAD HUNTER 🛡️</h1><p style="color:#888;">Update: 20:43:29</p></body></html>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پنل آرشیو مهرداد هانتر</title>
+    <style>
+        body { background: #121212; color: #eee; font-family: Tahoma; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: #1e1e1e; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-right: 5px solid #00e676; position: relative; }
+        .time { font-size: 12px; color: #888; }
+        .source { font-size: 12px; background: #333; padding: 2px 8px; border-radius: 4px; color: #00e676; }
+        .config-text { display: block; background: #000; padding: 10px; margin-top: 10px; font-size: 11px; word-break: break-all; border-radius: 5px; color: #bbb; cursor: pointer; }
+        h1 { text-align: center; color: #00e676; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ آرشیو ۱۰۰ کانفیگ اخیر مهرداد هانتر</h1>
+        <div id="list">Loading...</div>
+    </div>
+
+    <script>
+        fetch('proxies_data.json')
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                data.forEach(item => {
+                    html += `
+                        <div class="card">
+                            <span class="time">⏰ ساعت: ${item.time}</span>
+                            <span class="source">📍 منبع: ${item.source}</span>
+                            <code class="config-text" onclick="navigator.clipboard.writeText('${item.link}')">${item.link}</code>
+                        </div>
+                    `;
+                });
+                document.getElementById('list').innerHTML = html;
+            });
+    </script>
+</body>
+</html>
